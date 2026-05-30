@@ -40,16 +40,16 @@ Ele recebe uma descrição de produto e executa autonomamente tudo que um time d
 ```
   ┌─────────────────────────────────────────────────────────────────────┐
   │                                                                     │
-  │   F1  ──►  F2  ──►  F3  ──►  F4  ──►  F5  ──►  F6  ──►  F7       │
+  │   F1  ──►  F2  ──►  F3  ──►  F4  ──►  F5  ──►  F6  ──►  F7          │
   │    │        │        │        │        │        │        │          │
   │  Discovery  Arch    Data    UX/UI    Enginer  Quality  Operate      │
   │  Strategy  Design  Contracts Planning  Exec   Docs     Evolve       │
-  │                                                Deploy              │
+  │                                                Deploy               │
   │                                                         │           │
   │                                              ┌──────────┤           │
   │                                              ▼          ▼           │
   │                                             F2         F4           │
-  │                                         (arch evo) (feat evo)      │
+  │                                         (arch evo) (feat evo)       │
   │                                                                     │
   └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -221,35 +221,35 @@ product-strategy-engine
 ┌──────────────────────────────────────────────────────────────────┐
 │                   AUTONOMOUS ORCHESTRATOR                        │
 │                                                                  │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │               OrchestratorContext                       │   │
-│   │     product | architecture | contracts | engineering    │   │
-│   │     ux | quality | operations | agentic | ADRs          │   │
-│   └─────────────────────────────┬───────────────────────────┘   │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │               OrchestratorContext                       │    │
+│   │     product | architecture | contracts | engineering    │    │
+│   │     ux | quality | operations | agentic | ADRs          │    │
+│   └─────────────────────────────┬───────────────────────────┘    │
 │                                 │                                │
-│   ┌─────────────────────────────▼───────────────────────────┐   │
-│   │                   PhaseController                       │   │
-│   │   aciona sub-skills · valida quality gates              │   │
-│   │   controla dependências · gerencia paralelismo          │   │
-│   └────────────────┬────────────────────────────────────────┘   │
+│   ┌─────────────────────────────▼───────────────────────────┐    │
+│   │                   PhaseController                       │    │
+│   │   aciona sub-skills · valida quality gates              │    │
+│   │   controla dependências · gerencia paralelismo          │    │
+│   └────────────────┬────────────────────────────────────────┘    │
 │                    │                                             │
-│   ┌────────────────▼────────────────────────────────────────┐   │
-│   │              ExternalSkillResolver                      │   │
-│   │   descobre skills externas · avalia relevância          │   │
-│   │   delega (substituto ou complementar)                   │   │
-│   └──────────────┬──────────────────────┬───────────────────┘   │
+│   ┌────────────────▼────────────────────────────────────────┐    │
+│   │              ExternalSkillResolver                      │    │
+│   │   descobre skills externas · avalia relevância          │    │
+│   │   delega (substituto ou complementar)                   │    │ 
+│   └──────────────┬──────────────────────┬───────────────────┘    │
 │                  │                      │                        │
 │            sub-skill             skill externa                   │
 │             interno           (.agents/skills/)                  │
 │                  │                      │                        │
-│   ┌──────────────▼──────────────────────▼───────────────────┐   │
-│   │   ContextBus · ConflictDetector · CompressionEngine     │   │
-│   └──────────────────────────┬──────────────────────────────┘   │
+│   ┌──────────────▼──────────────────────▼───────────────────┐    │
+│   │   ContextBus · ConflictDetector · CompressionEngine     │    │
+│   └──────────────────────────┬──────────────────────────────┘    │
 │                              │                                   │
-│   ┌──────────────────────────▼──────────────────────────────┐   │
-│   │                   SnapshotEngine                        │   │
-│   │         O1 → O2 → O3 → O4 → O5 → O6 → O7              │   │
-│   └─────────────────────────────────────────────────────────┘   │
+│   ┌──────────────────────────▼──────────────────────────────┐    │
+│   │                   SnapshotEngine                        │    │
+│   │         O1 → O2 → O3 → O4 → O5 → O6 → O7                │    │
+│   └─────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
