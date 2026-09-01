@@ -17,6 +17,7 @@ Referências:
 - [pipeline.md](./pipeline.md) — fases de execução completas com quality gates
 - [sub-skills/](./sub-skills/) — 55 sub-skills individuais no formato de skill completo
 - [context-management.md](./context-management.md) — protocolo de contexto, snapshots e sincronização
+- [knowledge-layer.md](./knowledge-layer.md) — especificação da AI Documentation Knowledge Layer (índices, grafos, freshness, retrieval)
 
 ---
 
@@ -113,7 +114,7 @@ Ver protocolo completo em [sub-skills/external-skill-resolver.md](./sub-skills/e
 
 ## 🧩 Sub-skills Especialistas
 
-O orquestrador coordena 55 sub-skills organizadas em 7 fases + 1 transversal. Cada sub-skill está documentada individualmente em [sub-skills/](./sub-skills/).
+O orquestrador coordena 55 sub-skills organizadas em 7 fases, duas delas atuando também de forma transversal (`external-skill-resolver` em F2–F7 e `ai-docs-self-healing-engine` em F4–F7). Cada sub-skill está documentada individualmente em [sub-skills/](./sub-skills/).
 
 ### Mapa rápido por fase
 
@@ -122,11 +123,12 @@ O orquestrador coordena 55 sub-skills organizadas em 7 fases + 1 transversal. Ca
 | F1 — Discovery & Strategy | `market-context-analysis`, `business-model-definition`, `persona-definition-engine`, `ideation-engine`, `business-understanding-engine`, `requirements-engine`, `scope-definition-engine`, `feasibility-analysis-engine`, `mvp-validation-engine`, `metrics-definition-engine` |
 | F2 — Architecture & Design | `global-architecture-engine`, `system-design-engine`, `layered-architecture-engine`, `integration-definition-engine`, `infrastructure-strategy-engine`, `technology-stack-selector`, `security-architecture-engine` |
 | F3 — Data & API Contracts | `data-modeling-engine`, `api-contract-engine`, `data-consistency-engine` |
-| F4 — UX/UI & Planning | `ux-ui-design-engine`, `usability-testing-engine`, `technical-planning-engine`, `agentic-project-structure-engine`, `backlog-generation-engine`, `prioritization-engine` |
-| F5 — Engineering Execution | `project-setup-engine`, `code-governance-engine`, `architectural-patterns-engine`, `cicd-pipeline-engine`, `quality-gates-engine`, `backend-development-engine`, `frontend-development-engine`, `mobile-development-engine`, `distributed-architecture-engine`, `orchestration-engine` |
-| F6 — Quality, Docs & Deploy | `automated-testing-engine`, `quality-assurance-engine`, `security-testing-engine`, `manual-qa-notion-export-engine`, `documentation-engine`, `operational-documentation-engine`, `ai-docs-self-healing-engine`, `deployment-engine`, `post-deployment-validation-engine` |
-| F7 — Operate & Evolve | `observability-engine`, `incident-management-engine`, `maintenance-engine`, `continuous-evolution-engine`, `user-feedback-engine`, `performance-and-scale-engine`, `infrastructure-cost-optimization-engine`, `architectural-reassessment-engine`, `product-strategy-engine` |
+| F4 — UX/UI & Planning | `ux-ui-design-engine`, `usability-testing-engine`, `technical-planning-engine`, `agentic-project-structure-engine`, `ai-docs-self-healing-engine` (modo `bootstrap`), `backlog-generation-engine`, `prioritization-engine` |
+| F5 — Engineering Execution | `project-setup-engine`, `code-governance-engine`, `architectural-patterns-engine`, `cicd-pipeline-engine`, `quality-gates-engine`, `backend-development-engine`, `frontend-development-engine`, `mobile-development-engine`, `distributed-architecture-engine`, `orchestration-engine`, `ai-docs-self-healing-engine` (modo `incremental`) |
+| F6 — Quality, Docs & Deploy | `automated-testing-engine`, `quality-assurance-engine`, `security-testing-engine`, `manual-qa-notion-export-engine`, `documentation-engine`, `operational-documentation-engine`, `ai-docs-self-healing-engine` (modo `audit`), `deployment-engine`, `post-deployment-validation-engine` |
+| F7 — Operate & Evolve | `observability-engine`, `incident-management-engine`, `maintenance-engine`, `continuous-evolution-engine`, `user-feedback-engine`, `performance-and-scale-engine`, `infrastructure-cost-optimization-engine`, `architectural-reassessment-engine`, `product-strategy-engine`, `ai-docs-self-healing-engine` (modo `continuous`) |
 | **Transversal (F2–F7)** | **`external-skill-resolver`** — avalia e delega para skills externas antes de cada sub-skill a partir de F2 |
+| **Transversal (F4–F7)** | **`ai-docs-self-healing-engine`** — mantém a AI Documentation Knowledge Layer em quatro modos: `bootstrap` (F4), `incremental` (F5), `audit` (F6) e `continuous` (F7) |
 
 ### Regras de ativação
 
@@ -136,6 +138,7 @@ O orquestrador coordena 55 sub-skills organizadas em 7 fases + 1 transversal. Ca
 * Toda sub-skill deve produzir output estruturado que é mergeado de volta ao contexto ao finalizar
 * A partir de F2, o `ExternalSkillResolver` é consultado antes de ativar qualquer sub-skill de execução — se uma skill externa mais especializada existir, ela pode substituir ou complementar o sub-skill interno
 * Skills locais do projeto (`.agents/skills/`) têm prioridade sobre skills globais — sempre verificar o projeto antes das fontes globais
+* `ai-docs-self-healing-engine` é transversal a F4–F7 e não é uma etapa única: seu modo é determinado pela fase ativa e pelo gatilho (entrega de feature, auditoria pré-deploy, mudança de código em produção)
 
 ---
 
@@ -217,7 +220,18 @@ Ver protocolo completo em [context-management.md](./context-management.md).
     "agents_map": {},
     "skills_map": {},
     "traceability_rules": [],
-    "initial_adrs_recommended": []
+    "initial_adrs_recommended": [],
+    "knowledge_layer": {
+      "path": "docs/.ai",
+      "schema_version": "1",
+      "source_commit": "",
+      "repository_id": "",
+      "system_id": "",
+      "artifacts": {},
+      "counts": {},
+      "health": {},
+      "retrieval_tests": {}
+    }
   },
   "quality": {
     "gates_passed": [],
@@ -234,6 +248,8 @@ Ver protocolo completo em [context-management.md](./context-management.md).
   }
 }
 ```
+
+> `agentic.knowledge_layer` guarda **apenas ponteiros e métricas** — caminho, versão de schema, commit de origem, hashes, contagens e saúde. Índices e grafos completos permanecem em `/docs/.ai/` e nunca entram no contexto, sob pena de token explosion.
 
 ### Estratégia de compressão
 
@@ -260,6 +276,11 @@ Ver protocolo completo em [context-management.md](./context-management.md).
 * **SEMPRE** validar que outputs de sub-skills são consistentes com decisões já registradas no contexto antes de aceitar o merge
 * **SEMPRE** manter rastreabilidade bidirecional: requisito → decisão arquitetural → implementação → teste → deploy
 * **SEMPRE** acionar `architectural-reassessment-engine` quando qualquer KPI de F7 atingir threshold crítico
+* **SEMPRE** respeitar a precedência de fontes de verdade: `código executável e contratos > ADRs > OrchestratorContext > documentação Markdown > índices derivados`
+* **SEMPRE** resolver drift comprovado entre código e documentação em favor do código — `code wins`, doc marcado stale, healing localizado e índice regenerado
+* **SEMPRE** concluir uma mudança de comportamento com healing localizado da documentação e refresh do índice correspondente — feature entregue sem doc e sem entrada de índice não conta como entregue
+* **SEMPRE** consultar `/docs/.ai/index.json` antes de varrer código quando o projeto possui knowledge layer indexada
+* **NUNCA** armazenar grafos, índices ou artefatos de `/docs/.ai/` dentro do `OrchestratorContext` — apenas caminho, hash, versão e métricas
 
 ### Padrão global de campanhas manuais de QA no Notion
 
@@ -298,6 +319,12 @@ Quando F6 produzir uma campanha de QA manual no Notion, aplicar este padrão em 
 * Ativar skill externa sem injetar `OrchestratorContext` — skill sem contexto arquitetural produz output desconexo da arquitetura
 * Aceitar output de skill externa sem passar pelo `ConflictDetector` — mesmo outputs de specialists externos podem contradizer ADRs
 * Assumir que skill externa cobre a responsabilidade completa sem verificar — usar modo complementar quando a cobertura for parcial
+* Varrer todo o repositório para responder algo que já está indexado na knowledge layer
+* Carregar o Code Graph ou o Integration Graph inteiro no contexto do LLM em vez de percorrer a vizinhança de um node âncora
+* Tratar relação `inferred` como fato arquitetural comprovado — relação sem evidência não sustenta decisão
+* Editar manualmente artefatos de `/docs/.ai/` em vez de corrigir a fonte canônica e regenerar
+* Indexar secrets, credenciais, conteúdo de `.env` ou dados pessoais reais na knowledge layer
+* Regenerar toda a knowledge layer após uma mudança localizada de código
 
 ---
 
@@ -340,6 +367,7 @@ Quando F6 produzir uma campanha de QA manual no Notion, aplicar este padrão em 
 
 * **Context snapshots por fase** — estado persistido ao final de cada fase (O1–O7)
 * **Estrutura agentic persistente** — `docs/`, `specs/`, `tasks/`, `skills/`, `agents/` e `adr/` formam a base de contexto compartilhado entre agentes
+* **Knowledge layer para recuperação** — `INDEX FIRST → DOCS SECOND → CODE LAST`: índices compactos em `/docs/.ai/`, documentos Markdown para humanos, código apenas como fallback declarado
 * **Sincronização via ContextBus** — toda leitura/escrita de contexto é mediada, nunca direta
 * **Paralelismo controlado** — somente sub-skills sem dependência mútua rodam em paralelo
 * **Merge determinístico** — outputs paralelos são mergeados em ordem determinística com detecção de conflito

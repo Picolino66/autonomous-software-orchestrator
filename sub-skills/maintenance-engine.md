@@ -18,7 +18,7 @@ Manutenção não é sinal de falha — é evidência de que o sistema está sen
 * Atualização regular de dependências: security patches obrigatórios, updates menores controlados
 * Correção de débito técnico identificado em `quality.qa_report`
 * Otimizações de performance baseadas em dados de observabilidade
-* Atualização de documentação quando comportamento do sistema muda
+* Atualização de documentação quando comportamento do sistema muda, classificando antes o tipo de mudança (`none`, `technical`, `behavioral`, `architectural`) e acionando `ai-docs-self-healing-engine` em modo `continuous` para healing localizado
 * Validação de que correções não introduzem regressões (via test suite)
 * Comunicação de mudanças (change log) para stakeholders quando relevante
 
@@ -38,6 +38,7 @@ Manutenção não é sinal de falha — é evidência de que o sistema está sen
 * Hotfix em produção sem teste de regressão e sem passar pelo pipeline
 * Ignorar atualização de dependências por meses ("está funcionando, não mexe")
 * Bug fix que resolve sintoma sem endereçar causa raiz
+* Correção que altera comportamento sem healing da documentação e refresh do índice associado
 * Débito técnico nunca priorizado ("vemos quando tivermos tempo")
 
 ---

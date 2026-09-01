@@ -17,6 +17,7 @@ Esta é a sub-skill que transforma F7 em um ciclo — não um ponto final. O sof
 * Consolidar insights de `user-feedback-engine`, débito técnico de `maintenance-engine` e dados de `observability-engine`
 * Priorizar o backlog de evolução por: impacto nas métricas de produto, esforço estimado, urgência técnica
 * Identificar se as evoluções requerem mudança arquitetural (retorno a F2) ou apenas novas features (retorno a F4)
+* Solicitar análise de impacto à knowledge layer antes de priorizar cada item — features, endpoints, telas, eventos, testes, documentação e repositórios afetados, com o nível de confiança do resultado
 * Propor revisão de hipóteses de produto: quais hipóteses foram confirmadas/refutadas pelos dados reais
 * Definir o escopo do próximo ciclo de evolução
 * Atualizar ADRs quando evolução implica revisão de decisões arquiteturais anteriores
@@ -35,6 +36,7 @@ Esta é a sub-skill que transforma F7 em um ciclo — não um ponto final. O sof
 ## ⚠️ Anti-patterns (proibido)
 
 * Ciclo de evolução sem priorização — tudo é importante = nada é importante
+* Estimar esforço de evolução sem análise de impacto — o custo real de mudar um componente está nos seus dependentes, não nele
 * Retornar a F4 com features que na verdade requerem mudança arquitetural (passando por cima da necessidade de F2)
 * Ignorar débito técnico no backlog de evolução ("só features novas")
 * Evoluir produto sem revisar se as hipóteses originais foram confirmadas

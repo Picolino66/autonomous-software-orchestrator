@@ -33,6 +33,7 @@ Opera em paralelo com `operational-documentation-engine` após `quality-assuranc
 * ADRs devem ser linkados da documentação de arquitetura — não documentação sem rastreabilidade de decisão
 * Guia de desenvolvimento deve ser testado: um desenvolvedor novo deve conseguir fazer setup seguindo apenas o guia
 * OpenAPI spec deve ser a documentação de API — nunca documentação separada que pode divergir
+* Fronteira com a knowledge layer: esta sub-skill produz **documentação técnica para humanos** (arquitetura, guia de dev, API interativa, diagramas). A `ai-docs-self-healing-engine` produz a **camada de recuperação para agentes** (`/docs/.ai/`) e a documentação por módulo/feature. ADRs, OpenAPI e AsyncAPI gerados aqui são **fontes canônicas** consumidas por aquela camada — nunca conteúdo duplicado nela
 
 ---
 
@@ -42,6 +43,7 @@ Opera em paralelo com `operational-documentation-engine` após `quality-assuranc
 * Guia de desenvolvimento com passos que não funcionam por estarem desatualizados
 * Documentação apenas no README.md do repositório sem estrutura navegável
 * ADRs sem referência cruzada na documentação de arquitetura
+* Reescrever em documentação técnica o que já é fonte canônica indexada pela knowledge layer, criando duas versões da mesma verdade
 
 ---
 

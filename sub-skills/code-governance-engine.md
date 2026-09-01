@@ -31,6 +31,8 @@ Sem governança, times produzem código heterogêneo que é difícil de ler, rev
 * Conventional commits obrigatório — habilita geração automática de changelog
 * Ruleset de lint deve ser commitada e versionada — não configuração individual por desenvolvedor
 * Code review checklist deve incluir verificação de aderência aos padrões de camadas definidos em F2
+* `/docs/.ai/` é conteúdo gerado: versionado no repositório, revisado como diff, nunca editado à mão — edição manual é motivo de rejeição em code review
+* PR que altera comportamento, contrato, fluxo ou regra só é aprovado com healing da documentação afetada e refresh do índice correspondente na mesma entrega
 
 ---
 
@@ -40,6 +42,7 @@ Sem governança, times produzem código heterogêneo que é difícil de ler, rev
 * Commits de merge direto na branch principal sem PR
 * Convencional commits como "recomendação" em vez de regra técnica aplicada por hook
 * Lint com muitos warnings ignorados — warnings acumulados perdem significado
+* Ajustar artefatos de `/docs/.ai/` manualmente para "fazer o gate passar" em vez de corrigir a fonte canônica e regenerar
 
 ---
 

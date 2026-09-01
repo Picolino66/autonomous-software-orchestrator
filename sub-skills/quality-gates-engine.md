@@ -21,6 +21,7 @@ Quality gates são a diferença entre "qualidade como intenção" e "qualidade c
 * Configurar análise de dependências: outdated packages, security vulnerabilities (npm audit, Snyk, Dependabot)
 * Definir e documentar os critérios de aprovação de cada gate
 * Configurar relatórios de qualidade gerados por pipeline para rastreabilidade histórica
+* Registrar o gate `AI-DOC` da knowledge layer como verificação automatizada do pipeline de PR — integridade referencial dos índices, documentos órfãos, links quebrados, IDs duplicados, freshness e presença de secrets (ver `scripts/validate-knowledge-layer.mjs`)
 
 ---
 
@@ -30,6 +31,7 @@ Quality gates são a diferença entre "qualidade como intenção" e "qualidade c
 * Vulnerabilidades críticas em dependências bloqueiam merge — não são warning
 * Análise estática deve estar no pipeline de PR, não apenas em builds noturnos
 * Thresholds devem ser documentados no repositório — não configuração apenas na ferramenta externa
+* Documento em estado `stale-critical` ou referência quebrada na knowledge layer bloqueia merge — não é warning
 * Degradação de qualidade (coverage caindo, complexidade aumentando) deve gerar alerta antes de virar bloqueador
 
 ---

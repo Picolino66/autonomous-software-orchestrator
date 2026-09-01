@@ -134,11 +134,12 @@ data-consistency-engine
 | `ux-ui-design-engine` | Jornadas de usuário, wireframes, design system |
 | `usability-testing-engine` | Validação dos fluxos críticos |
 | `technical-planning-engine` | Mapa de módulos e feature breakdown |
-| `agentic-project-structure-engine` | Estrutura `docs/`, `specs/`, `tasks/`, `skills/`, `agents/`, `adr/` |
+| `agentic-project-structure-engine` | Estrutura `docs/`, `specs/`, `tasks/`, `skills/`, `agents/`, `adr/` + convenção de IDs estáveis |
+| `ai-docs-self-healing-engine` (`bootstrap`) | Esqueleto de `/docs` e `/docs/.ai` com IDs estáveis das features planejadas |
 | `backlog-generation-engine` | Histórias técnicas com critérios de aceitação |
 | `prioritization-engine` | Backlog ordenado por valor × risco × esforço |
 
-**Quality gate:** jornadas validadas + estrutura agentic criada + specs para todas as features + rastreabilidade definida + threshold de cobertura registrado
+**Quality gate:** jornadas validadas + estrutura agentic criada + specs para todas as features + rastreabilidade bidirecional definida + `/docs/.ai` inicializado com IDs estáveis + threshold de cobertura registrado
 
 </details>
 
@@ -159,9 +160,11 @@ backend-development-engine  ◄──►  frontend-development-engine  ◄──
 distributed-architecture-engine   (quando microsserviços)
         ↓
 orchestration-engine               (quando filas/eventos/workers)
+
+ai-docs-self-healing-engine        (modo incremental, a cada feature entregue)
 ```
 
-**Quality gate:** build verde + cobertura ≥ threshold + zero lint crítico + nenhum contrato divergindo da spec de F3 + pipeline CI/CD verde + zero secrets hardcoded
+**Quality gate:** build verde + cobertura ≥ threshold + zero lint crítico + nenhum contrato divergindo da spec de F3 + pipeline CI/CD verde + zero secrets hardcoded + nenhuma feature entregue sem doc e entrada de índice
 
 </details>
 
@@ -175,7 +178,7 @@ automated-testing-engine  ◄──►  security-testing-engine
         ↓
 quality-assurance-engine
         ↓
-manual-qa-notion-export-engine  ◄──►  documentation-engine  ◄──►  operational-documentation-engine  ◄──►  ai-docs-self-healing-engine
+manual-qa-notion-export-engine  ◄──►  documentation-engine  ◄──►  operational-documentation-engine  ◄──►  ai-docs-self-healing-engine (audit)
         ↓
 deployment-engine
         ↓
@@ -184,7 +187,7 @@ post-deployment-validation-engine
 
 **Saídas:** suíte completa de testes (unit, integration, contract, e2e), relatório SAST/DAST/SCA, campanha manual com CSV enxuto e roteiro no corpo dos cards do Notion quando aplicável, documentação técnica e arquitetural, runbooks, sistema deployado com rollback validado
 
-**Quality gate:** security scan sem críticos + testes e2e aprovados + docs completa + rollback testado + smoke tests passando
+**Quality gate:** security scan sem críticos + testes e2e aprovados + docs completa + **gate `AI-DOC` aprovado** (índices íntegros, zero órfãos, zero `stale-critical`, freshness válido, nenhum secret indexado) + retrieval test suite executada + rollback testado + smoke tests passando
 
 </details>
 
@@ -207,6 +210,8 @@ architectural-reassessment-engine (on trigger: scale | complexity | tech debt)
         ↓
 product-strategy-engine
         ↻  retorna a F2 ou F4
+
+ai-docs-self-healing-engine       (modo continuous — healing por diff + análise de impacto)
 ```
 
 **Quality gate:** SLOs definidos + alertas configurados + feedback loop operacional + primeiro incident review realizado + decisão de próxima evolução documentada
@@ -283,7 +288,7 @@ Um único objeto JSON canônico cresce ao longo das 7 fases e é compartilhado e
   "contracts":    { "api_version", "api_spec", "schemas", "consistency_model" },
   "ux":           { "journeys", "wireframes", "design_system" },
   "engineering":  { "backlog", "module_map", "coverage_report" },
-  "agentic":      { "docs_map", "specs_map", "agents_map", "skills_map" },
+  "agentic":      { "docs_map", "specs_map", "agents_map", "skills_map", "knowledge_layer" },
   "quality":      { "gates_passed", "gates_failed", "security_report" },
   "operations":   { "slos", "alerts", "incidents", "runbooks" }
 }
@@ -296,12 +301,75 @@ Um único objeto JSON canônico cresce ao longo das 7 fases e é compartilhado e
 | **O1** após F1 | `product` · `market` · `business` · `requirements` · `scope` · `feasibility` |
 | **O2** após F2 | `architecture` (todas as subchaves) |
 | **O3** após F3 | `contracts` (todas as subchaves) |
-| **O4** após F4 | `ux` · `engineering.backlog` · `engineering.module_map` · `agentic` |
+| **O4** após F4 | `ux` · `engineering.backlog` · `engineering.module_map` · `agentic` (exceto `docs_map` e `knowledge_layer`) |
 | **O5** após F5 | `engineering` · `quality.coverage_report` |
 | **O6** após F6 | `quality` · `operations.deployment_record` |
 | **O7** após F7 | `operations` (todas as subchaves) |
 
 > Seções congeladas nunca são modificadas diretamente. Qualquer revisão exige um ADR de "decision override" com justificativa explícita.
+> Exceção: `agentic.docs_map` e `agentic.knowledge_layer` descrevem artefatos **derivados** do código e continuam evoluindo em F5–F7. As *convenções* que os governam — gramática de IDs, `repository_id`/`system_id`, regras de rastreabilidade — permanecem congeladas.
+
+---
+
+## AI Documentation Knowledge Layer
+
+A documentação do sistema gerado não é só Markdown para humanos — é uma base de conhecimento consultável por agentes. `ai-docs-self-healing-engine` mantém as duas faces em sincronia.
+
+```
+              HUMAN LAYER
+              /docs/**.md
+                   │
+             RETRIEVAL LAYER
+              /docs/.ai/
+                   │
+          ┌────────┼────────┐
+          │        │        │
+       indexes   graphs   freshness
+          │        │        │
+          └────────┼────────┘
+                   │
+             ANALYSIS LAYER
+          AST + contratos + diff
+                   │
+                   ▼
+               SOURCE CODE
+```
+
+**Princípio:** `INDEX FIRST → DOCS SECOND → CODE LAST`
+
+```
+pergunta
+   ↓  detecção de intenção e chave
+índice .ai  (index.json é o único carregado por inteiro)
+   ↓  consulta seletiva
+vizinhança do grafo  (1-hop; 2-hop só em impacto ou fluxo ponta a ponta)
+   ↓
+documentos relevantes
+   ↓
+resposta          └─ insuficiente → código-fonte (fallback declarado)
+```
+
+E na direção inversa, toda mudança de código provoca correção proporcional:
+
+```
+code diff → symbol/contract diff → nodes alterados → edges impactadas
+          → features impactadas → docs impactados
+          → classificar (none | technical | behavioral | architectural)
+          → healing localizado → refresh de índice
+```
+
+| Grafo | Responde |
+|---|---|
+| **Code Graph** | quem chama, implementa, lê, escreve, valida — derivado de AST |
+| **Integration Graph** | como serviços e repositórios se comunicam — HTTP, gRPC, Kafka, filas, webhooks |
+| **Business Flow Graph** | o fluxo em linguagem de domínio, ligado a features, rotas e regras |
+| **Traceability Graph** | requisito ↕ regra ↕ feature ↕ ADR ↕ endpoint ↕ código ↕ teste ↕ doc |
+
+Perguntas que passam a ser respondidas sem varrer código: *quem gera o JWT?* · *qual endpoint cria pedidos?* · *quem consome `PaymentApproved`?* · *onde `BR-PAY-004` é implementada?* · *quais repositórios participam do checkout?* · *se eu alterar `CustomerStatus`, o que pode quebrar?*
+
+Toda relação carrega `confidence` (`deterministic` · `high` · `inferred` · `unknown`) com evidência. O grafo oferece **alta precisão estrutural** sobre o que é deterministicamente verificável — reflexão, dispatch dinâmico e fluxos dirigidos por configuração são registrados como lacuna declarada, nunca preenchidos por adivinhação.
+
+Especificação completa em [knowledge-layer.md](./knowledge-layer.md). Gate verificável por `node scripts/validate-knowledge-layer.mjs --docs docs`.
 
 ---
 
@@ -358,8 +426,10 @@ autonomous-software-orchestrator/
 ├── SKILL.md                           # Protocolo de orquestração e regras obrigatórias
 ├── pipeline.md                        # 7 fases com quality gates detalhados
 ├── context-management.md              # OrchestratorContext, snapshots, ADRs e rollback
+├── knowledge-layer.md                 # AI Knowledge Layer: índices, grafos, freshness, retrieval
 ├── scripts/
-│   └── export-manual-qa-notion.mjs    # Gera propriedades e conteúdo dos cards do Notion
+│   ├── export-manual-qa-notion.mjs    # Gera propriedades e conteúdo dos cards do Notion
+│   └── validate-knowledge-layer.mjs   # Valida o quality gate AI-DOC da knowledge layer
 │
 └── sub-skills/                        # 55 sub-skills individuais
     │
@@ -390,6 +460,9 @@ Qualidade não negociável         →  quality gates bloqueiam avanço sem apro
 Consistência garantida           →  produto, arquitetura, código, testes e operações alinhados
 Evolução contínua segura         →  F7 aciona reavaliação antes de qualquer mudança estrutural
 Contexto preservado              →  nenhum agente opera sem o OrchestratorContext atualizado
+Contexto recuperável             →  índices e grafos respondem sem varrer código; grafo nunca entra no prompt
+Documentação sincronizada        →  drift detectado por diff e hash; healing localizado, nunca regeneração total
+Dependências sem alucinação      →  toda relação com confidence e evidência; sem evidência, sem relação
 ```
 
 ---
@@ -398,6 +471,6 @@ Contexto preservado              →  nenhum agente opera sem o OrchestratorCont
 
 **Documentação completa**
 
-[pipeline.md](./pipeline.md) &nbsp;·&nbsp; [context-management.md](./context-management.md) &nbsp;·&nbsp; [sub-skills/](./sub-skills/) &nbsp;·&nbsp; [SKILL.md](./SKILL.md)
+[pipeline.md](./pipeline.md) &nbsp;·&nbsp; [context-management.md](./context-management.md) &nbsp;·&nbsp; [knowledge-layer.md](./knowledge-layer.md) &nbsp;·&nbsp; [sub-skills/](./sub-skills/) &nbsp;·&nbsp; [SKILL.md](./SKILL.md)
 
 </div>

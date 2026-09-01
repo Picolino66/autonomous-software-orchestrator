@@ -139,6 +139,8 @@ technical-planning-engine
     ↓
 agentic-project-structure-engine
     ↓
+ai-docs-self-healing-engine (modo bootstrap)
+    ↓
 backlog-generation-engine
     ↓
 prioritization-engine
@@ -156,7 +158,8 @@ prioritization-engine
 - `agentic.project_structure` — estrutura obrigatória `docs/`, `specs/`, `tasks/`, `skills/`, `agents/`, `adr/` criada ou validada
 - `agentic.specs_map` — specs por feature planejada com vínculos para docs e requisitos
 - `agentic.agents_map` / `agentic.skills_map` — agentes e skills necessários por área de execução
-- `agentic.traceability_rules` — convenções de rastreabilidade entre docs, specs, tasks, código, testes e ADRs
+- `agentic.traceability_rules` — convenções de rastreabilidade bidirecional entre requisitos, regras, docs, specs, tasks, ADRs, código, testes e docs atualizados, com gramática de IDs estáveis
+- `agentic.knowledge_layer` — esqueleto de `/docs` e `/docs/.ai` criado, com IDs estáveis atribuídos às features planejadas (ponteiros e métricas apenas)
 - `engineering.backlog` — histórias técnicas com critérios de aceitação
 - `engineering.priorities` — backlog ordenado por valor × risco × esforço
 - `engineering.test_coverage_threshold` — threshold de cobertura acordado
@@ -170,6 +173,8 @@ prioritization-engine
 - [ ] Specs existentes para todas as features planejadas antes de gerar tasks/backlog
 - [ ] Convenção de rastreabilidade definida entre docs, specs, tasks, implementação, testes e docs atualizados
 - [ ] Mapa inicial de agentes e skills definido com ownership claro
+- [ ] `/docs/index.md` e `/docs/.ai/` criados com `index.json`, `features.json` e `freshness.json` válidos
+- [ ] Toda feature planejada possui ID estável, único e independente do nome de arquivo
 - [ ] Threshold de cobertura de testes definido e registrado no contexto
 
 ---
@@ -192,6 +197,8 @@ backend-development-engine ←→ frontend-development-engine ←→ mobile-deve
 distributed-architecture-engine (quando microsserviços)
     ↓
 orchestration-engine (quando filas/eventos/workers)
+
+ai-docs-self-healing-engine (modo incremental — transversal, a cada feature entregue)
 ```
 
 **Entradas obrigatórias:**
@@ -204,6 +211,7 @@ orchestration-engine (quando filas/eventos/workers)
 - Pipelines CI/CD configuradas e funcionais
 - `quality.gates_passed` — gates de lint, type-check, testes aprovados
 - `engineering.coverage_report` — relatório de cobertura atual
+- `agentic.knowledge_layer` — índices e grafos atualizados incrementalmente conforme features são entregues
 
 **Quality gate F5 → F6:**
 - [ ] Build sem erros em todos os módulos
@@ -212,6 +220,8 @@ orchestration-engine (quando filas/eventos/workers)
 - [ ] Nenhum contrato de API divergindo da spec de F3
 - [ ] Pipeline CI/CD verde em branch principal
 - [ ] Nenhum secret hardcoded detectado em SAST scan
+- [ ] Nenhuma feature entregue sem documento em `/docs/modules/` e entrada correspondente em `features.json`
+- [ ] Nenhum documento em estado `stale-critical`
 
 ---
 
@@ -226,7 +236,7 @@ automated-testing-engine ←→ security-testing-engine (paralelas)
     ↓
 quality-assurance-engine
     ↓
-manual-qa-notion-export-engine ←→ documentation-engine ←→ operational-documentation-engine ←→ ai-docs-self-healing-engine (paralelas)
+manual-qa-notion-export-engine ←→ documentation-engine ←→ operational-documentation-engine ←→ ai-docs-self-healing-engine (modo audit) (paralelas)
     ↓
 deployment-engine
     ↓
@@ -241,6 +251,8 @@ post-deployment-validation-engine
 - Relatório de segurança (SAST, DAST, SCA)
 - Campanha de QA manual por dia, CSV enxuto e conteúdo do corpo dos cards para Notion, quando aplicável
 - Documentação técnica e arquitetural
+- AI Documentation Knowledge Layer auditada: índices, Code Graph, Integration Graph, Business Flow Graph e traceability consistentes
+- Métricas da Retrieval Test Suite registradas
 - Runbooks e procedimentos operacionais
 - Sistema deployado e validado em ambiente de produção
 
@@ -250,7 +262,18 @@ post-deployment-validation-engine
 - [ ] Quando solicitada, campanha manual cobre as telas e fluxos visíveis, possui IDs únicos, CSV enxuto e conteúdo dos cards validados
 - [ ] Geração da campanha não foi registrada indevidamente como execução dos testes
 - [ ] Documentação técnica completa e acessível
-- [ ] `/docs/index.md` criado e índices de módulos sem links quebrados
+- [ ] Quality gate `AI-DOC` aprovado (ver [knowledge-layer.md](./knowledge-layer.md) §19):
+  - [ ] módulos e features relevantes indexados, com IDs estáveis e únicos
+  - [ ] nenhum link interno quebrado e nenhum documento órfão
+  - [ ] nenhum índice apontando para documento inexistente; nenhum símbolo apontando para código inexistente
+  - [ ] endpoints públicos com feature documental associada; eventos relevantes com produtor e/ou consumidor mapeado
+  - [ ] nenhum documento em estado `stale-critical`; freshness com commit e hashes coerentes
+  - [ ] artefatos `.ai` com `schema_version` suportado e metadata completa
+  - [ ] relações cross-repository críticas verificadas ou declaradas como `dangling`
+  - [ ] nenhum secret indexado
+  - [ ] toda relação apresentada como fato possui `confidence` `deterministic` ou `high` com evidência
+  - [ ] lacunas tecnicamente indetectáveis declaradas em `coverage_exceptions`
+- [ ] Retrieval Test Suite executada com métricas registradas em `agentic.knowledge_layer.retrieval_tests`
 - [ ] Runbooks de operação e incidente criados
 - [ ] Deploy executado com rollback testado e funcional
 - [ ] Post-deployment smoke tests aprovados
@@ -276,6 +299,8 @@ infrastructure-cost-optimization-engine (cadência regular)
 architectural-reassessment-engine (on trigger: scale | complexity | tech debt)
     ↓
 product-strategy-engine (ciclo de produto)
+
+ai-docs-self-healing-engine (modo continuous — healing dirigido por diff e fornecedor de análise de impacto)
     ↻ retorna a F2 (evolução arquitetural) ou F4 (novas features)
 ```
 
@@ -287,6 +312,7 @@ product-strategy-engine (ciclo de produto)
 - `operations.alerts` — alertas configurados
 - Backlog de melhorias derivadas de feedback e métricas
 - ADRs de evolução arquitetural quando aplicável
+- Knowledge layer sincronizada continuamente: healing localizado por diff e análise de impacto sob demanda
 - Decisão de loop: retorno a F2 ou F4 com contexto atualizado
 
 **Quality gate F7 (loop):**
@@ -295,6 +321,8 @@ product-strategy-engine (ciclo de produto)
 - [ ] Feedback loop com usuários operacional
 - [ ] Primeiro incident review realizado após primeira semana de produção
 - [ ] Decisão de próxima evolução documentada com justificativa
+- [ ] Nenhum documento em `stale-critical` após as mudanças do ciclo
+- [ ] Análise de impacto executada pela knowledge layer antes de qualquer evolução arquitetural
 
 ---
 
@@ -321,3 +349,16 @@ F1 ─────────────────────────�
                       (arch      (features
                        evolution)  evolution)
 ```
+
+## Faixa transversal — AI Documentation Knowledge Layer
+
+`ai-docs-self-healing-engine` não é uma etapa única de F6. Atravessa F4–F7 em quatro modos:
+
+```
+F4 ──── bootstrap ────► estrutura /docs e /docs/.ai + IDs estáveis das features planejadas
+F5 ──── incremental ──► doc + índices + grafo atualizados a cada feature entregue
+F6 ──── audit ────────► auditoria completa, quality gate AI-DOC, retrieval test suite
+F7 ──── continuous ───► healing dirigido por diff, freshness e análise de impacto
+```
+
+Especificação normativa em [knowledge-layer.md](./knowledge-layer.md).

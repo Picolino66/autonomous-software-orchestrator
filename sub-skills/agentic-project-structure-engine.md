@@ -20,7 +20,8 @@ Opera após `technical-planning-engine` e antes de `backlog-generation-engine`, 
 * Definir ou validar a estrutura agentic obrigatória do projeto
 * Criar o mapa de relacionamento entre docs, specs, tasks, agents, skills e ADRs
 * Definir ownership de cada artefato e limites de responsabilidade entre agentes
-* Definir convenções de rastreabilidade entre requisito, doc, spec, task, implementação, teste e documentação atualizada
+* Definir convenções de rastreabilidade bidirecional entre requisito, regra de negócio, doc, spec, task, ADR, implementação, teste e documentação atualizada
+* Definir a gramática de IDs estáveis do projeto e o escopo de `repository_id`/`system_id`
 * Definir o mapa inicial de agentes necessários e as skills que cada agente deve usar
 * Recomendar ADRs iniciais para decisões estruturais relevantes do ecossistema agentic
 * Validar que nenhuma task operacional exista sem spec associada
@@ -48,6 +49,7 @@ Estrutura mínima recomendada:
 
 ```txt
 docs/index.md
+docs/.ai/
 docs/business/
 docs/architecture/
 docs/flows/
@@ -55,6 +57,27 @@ docs/modules/
 ```
 
 Responsável por negócio, arquitetura, fluxos, módulos e contexto duradouro que agentes devem consultar antes do código.
+
+`docs/.ai/` é a camada machine-readable consumida por agentes (índices, grafos e freshness). Esta sub-skill **define as convenções** — identidade estável, escopo e rastreabilidade; a geração e manutenção dos artefatos é responsabilidade de `ai-docs-self-healing-engine`, conforme [knowledge-layer.md](../knowledge-layer.md).
+
+#### Convenção de identidade estável
+
+Toda feature, módulo, fluxo e regra relevante recebe um ID estável definido nesta fase:
+
+```txt
+<module>.<feature>[.<sub-feature>]     auth.login · checkout.create-order · payment.authorize
+BR-<DOMÍNIO>-<NNN>                     regra de negócio
+ADR-<NNN>                              decisão arquitetural
+FLOW-<slug>                            fluxo de negócio
+```
+
+* O ID representa o **conceito**, nunca o caminho ou nome de arquivo — renomear `payment.service.ts` não altera `payment.authorize`
+* O ID só muda quando o conceito muda; o nome anterior permanece registrado em `aliases`
+* IDs removidos nunca são reutilizados para outro conceito
+
+#### Escopo de repositório e sistema
+
+Todo repositório declara `repository_id`. Quando participa de um sistema com múltiplos repositórios, declara também `system_id`. Referências entre repositórios são sempre qualificadas (`payment-api#payment.authorize`) e correlacionadas por contrato — rota, tópico ou schema —, nunca por caminho relativo de arquivo.
 
 ### `specs/`
 
@@ -182,6 +205,9 @@ O caminho `Ideia -> Código` é proibido. Quando uma ideia nova surgir, ela deve
 * Toda task deve apontar para uma spec
 * Toda spec deve apontar para docs relacionados e requisitos de origem
 * Toda implementação deve atualizar docs quando alterar comportamento, fluxo, contrato ou regra
+* A rastreabilidade é bidirecional e obrigatória: `requisito ↕ regra de negócio ↕ feature ↕ ADR ↕ endpoint/evento ↕ código ↕ teste ↕ documentação` — navegável nos dois sentidos
+* Todo artefato rastreável possui ID estável conforme a convenção desta fase
+* `docs/.ai/` é conteúdo derivado, versionado e regenerável — nunca editado manualmente
 * Todo artefato deve possuir ownership explícito
 * Regras de negócio devem viver em docs/specs, nunca em skills
 * Agentes devem ter responsabilidade, escopo, limites e skills declarados
@@ -201,6 +227,8 @@ O caminho `Ideia -> Código` é proibido. Quando uma ideia nova surgir, ela deve
 * Criar estruturas sem ownership
 * Usar `/docs` como backlog operacional
 * Usar `tasks/` para decisões arquiteturais que deveriam virar ADR
+* Usar o caminho do arquivo como identidade de uma feature
+* Editar manualmente artefatos de `docs/.ai/`
 
 ---
 
@@ -221,7 +249,7 @@ O caminho `Ideia -> Código` é proibido. Quando uma ideia nova surgir, ela deve
 * `agentic.tasks_workflow` — estados, convenções e fluxo de movimentação de tasks
 * `agentic.agents_map` — agentes necessários, responsabilidades, limites e ownership
 * `agentic.skills_map` — skills locais/globais necessárias por agente e tipo de trabalho
-* `agentic.traceability_rules` — convenções formais de rastreabilidade entre artefatos
+* `agentic.traceability_rules` — convenções formais de rastreabilidade bidirecional entre artefatos, incluindo gramática de IDs estáveis, `repository_id` e `system_id`
 * `agentic.initial_adrs_recommended` — ADRs iniciais recomendados para a organização agentic
 
 ### Dependências

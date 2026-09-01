@@ -129,7 +129,24 @@ Define o `OrchestratorContext`, protocolo de snapshots, estratégias de compress
     "agents_map": {},
     "skills_map": {},
     "traceability_rules": [],
-    "initial_adrs_recommended": []
+    "initial_adrs_recommended": [],
+    "knowledge_layer": {
+      "path": "docs/.ai",
+      "schema_version": "1",
+      "source_commit": "9243abc",
+      "repository_id": "checkout-api",
+      "system_id": "commerce-platform",
+      "artifacts": {
+        "features.json": "sha256:...",
+        "routes.json": "sha256:...",
+        "freshness.json": "sha256:..."
+      },
+      "counts": { "modules": 7, "features": 42, "routes": 31, "events": 9 },
+      "health": { "fresh": 39, "stale": 3, "stale_critical": 0, "broken_references": 0 },
+      "retrieval_tests": { "success_rate": 0.93, "docs_only_rate": 0.85, "fallback_to_code_rate": 0.15 },
+      "coverage_exceptions": [],
+      "agents_synced": true
+    }
   },
 
   "quality": {
@@ -172,6 +189,25 @@ Define o `OrchestratorContext`, protocolo de snapshots, estratégias de compress
 
 ---
 
+## `agentic.knowledge_layer` — apenas ponteiros
+
+A AI Documentation Knowledge Layer ([knowledge-layer.md](./knowledge-layer.md)) produz índices e grafos que podem crescer para dezenas de megabytes. Esses artefatos vivem exclusivamente em `/docs/.ai/`.
+
+O contexto guarda somente:
+
+| Guarda | Não guarda |
+|---|---|
+| caminho dos artefatos | conteúdo dos índices |
+| `schema_version` e `source_commit` | nodes e edges dos grafos |
+| hash por artefato | listas de símbolos, rotas ou entidades |
+| contagens e métricas de saúde | corpo de documentos |
+| métricas da retrieval test suite | evidências das relações |
+| exceções de cobertura declaradas | histórico de healing |
+
+Um agente que precisa de detalhe abre o artefato em disco pela chave da consulta, percorrendo a vizinhança do node âncora — nunca carregando o grafo completo.
+
+---
+
 ## Protocolo de Snapshots (O1–O7)
 
 Snapshots são tirados ao final de cada fase, após o quality gate ser aprovado. Representam o estado estável e auditável do contexto naquele ponto do pipeline.
@@ -181,7 +217,7 @@ Snapshots são tirados ao final de cada fase, após o quality gate ser aprovado.
 | O1 | F1 — Discovery & Strategy | `product`, `market`, `business`, `requirements`, `scope`, `feasibility` | Quality gate F1 aprovado |
 | O2 | F2 — Architecture & Design | `architecture` (todas as subchaves) | Quality gate F2 aprovado |
 | O3 | F3 — Data & API Contracts | `contracts` (todas as subchaves) | Quality gate F3 aprovado |
-| O4 | F4 — UX/UI & Planning | `ux`, `engineering.backlog`, `engineering.priorities`, `engineering.module_map`, `agentic` | Quality gate F4 aprovado |
+| O4 | F4 — UX/UI & Planning | `ux`, `engineering.backlog`, `engineering.priorities`, `engineering.module_map`, `agentic` (exceto `agentic.docs_map` e `agentic.knowledge_layer`) | Quality gate F4 aprovado |
 | O5 | F5 — Engineering Execution | `engineering` (todas as subchaves), `quality.coverage_report` | Quality gate F5 aprovado |
 | O6 | F6 — Quality, Docs & Deploy | `quality` (todas), `operations.deployment_record`, `operations.smoke_test_results` | Quality gate F6 aprovado |
 | O7 | F7 — Operate & Evolve | `operations` (todas as subchaves) | SLOs ativos + feedback loop operacional |
@@ -209,6 +245,20 @@ Snapshots são tirados ao final de cada fase, após o quality gate ser aprovado.
 * Modificações em seções congeladas requerem criação de um ADR de "decision override" com justificativa
 * O `ConflictDetector` rejeita qualquer escrita em seção congelada sem ADR correspondente
 
+### Exceção: artefatos derivados
+
+`agentic.knowledge_layer` e `agentic.docs_map` são as únicas subchaves de `agentic` **exemptas** do congelamento de O4. Ambas descrevem artefatos derivados do código, que por definição evoluem em F5, F6 e F7 a cada entrega e a cada healing.
+
+A exceção é estrita:
+
+| Subchave de `agentic` | Congelada em O4 | Como muda |
+|---|---|---|
+| `project_structure`, `specs_map`, `tasks_workflow`, `agents_map`, `skills_map`, `traceability_rules`, `initial_adrs_recommended` | **sim** | apenas via ADR de decision override |
+| `docs_map` | não | atualizada por `ai-docs-self-healing-engine` ao criar ou mover documentos |
+| `knowledge_layer` | **não** | regravada a cada execução da skill; sempre com `source_commit` atualizado |
+
+As *convenções* permanecem congeladas — gramática de IDs, `repository_id`/`system_id` e regras de rastreabilidade só mudam por ADR. O que evolui livremente é o **estado derivado** que essas convenções governam.
+
 ---
 
 ## Estratégia de Compressão de Contexto
@@ -228,6 +278,10 @@ Compressão é aplicada ao final de cada fase para evitar token explosion em exe
 * Quality gate approvals — logs completos sempre retidos
 * Contratos de API e schemas — sempre na íntegra
 * Snapshots — nunca comprimidos após serem tirados
+
+**O que nunca entra no contexto:**
+* Artefatos de `/docs/.ai/` — índices, Code Graph, Integration Graph, Business Flow Graph, traceability e freshness permanecem em disco; o contexto carrega apenas `agentic.knowledge_layer` com caminho, versão, hashes, contagens e métricas
+* Corpo de documentos Markdown de `/docs` — lidos sob demanda pela chave da consulta
 
 ### Algoritmo de compressão por fase
 
@@ -255,6 +309,8 @@ Compressão é aplicada ao final de cada fase para evitar token explosion em exe
 | O7 | ~14–22k tokens |
 
 Se qualquer snapshot exceder 25k tokens, `CompressionEngine` aciona compressão agressiva preservando apenas estrutura canônica + ADRs.
+
+A AI Documentation Knowledge Layer **não altera** essas estimativas: por maior que o sistema fique, `agentic.knowledge_layer` permanece na ordem de centenas de tokens, porque guarda apenas referências. É exatamente esse o mecanismo que permite documentar sistemas grandes sem inflar o contexto.
 
 ---
 
