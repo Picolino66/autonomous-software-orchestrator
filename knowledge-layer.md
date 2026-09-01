@@ -100,6 +100,8 @@ Proporcionalidade é regra. Um projeto pequeno não precisa de doze arquivos JSO
 
 Um artefato ausente não é falha de gate; um artefato **presente e inconsistente** é.
 
+A tabela acima descreve o escopo **repositório**. Sistemas multi-repositório possuem também um escopo **sistema**, na raiz que agrupa os repositórios, com obrigatoriedade própria — ver §8.4.
+
 ### 2.2 Metadata obrigatória em todo artefato `.ai`
 
 ```json
@@ -483,6 +485,113 @@ repo: payment-api         PaymentService.authorize → SaldoMinimoRule.validate
 
 Cada travessia é uma `integration boundary` com confiança e evidência próprias. A confiança do fluxo completo é a **menor** confiança entre suas travessias.
 
+### 8.4 Camada de sistema (raiz multi-repositório)
+
+Quando os repositórios de um sistema vivem lado a lado sob uma pasta comum, essa pasta recebe uma camada de conhecimento própria — **fina e roteadora**, nunca uma cópia do que está dentro dos repositórios.
+
+```
+<system_id>/                       ← raiz do sistema (pode não ser um repositório git)
+  docs/
+    index.md                       ← mapa dos repositórios e dos fluxos ponta a ponta
+    .ai/
+      system.json                  ← registro de repositórios (obrigatório)
+      integration-graph.json       ← travessias agregadas do sistema (obrigatório)
+      business-flows.json          ← fluxos que atravessam repositórios (quando existirem)
+  AGENTS.md · CLAUDE.md · GEMINI.md ← regras globais do sistema
+
+  <repository_id>/                 ← repositório com git próprio
+    docs/                          ← camada completa do escopo repositório (§2)
+    AGENTS.md · CLAUDE.md · GEMINI.md
+```
+
+**Obrigatoriedade no escopo sistema:**
+
+| Artefato | Quando é obrigatório |
+|---|---|
+| `system.json` | **sempre** que existir a camada de sistema |
+| `integration-graph.json` | **sempre** — é a razão de existir desta camada |
+| `business-flows.json` | quando houver fluxo de negócio atravessando repositórios |
+| `freshness.json` | sob demanda — apenas se a raiz tiver documentos próprios além do índice |
+
+`features.json` e `code-graph.json` **não existem** no escopo sistema: feature e estrutura de código pertencem ao repositório dono.
+
+```json
+{
+  "schema_version": "1",
+  "scope": "system",
+  "system_id": "commerce-platform",
+  "generated_at": "2026-09-01T12:00:00Z",
+  "generator": "ai-docs-self-healing-engine",
+  "repositories": [
+    {
+      "repository_id": "storefront-web",
+      "path": "storefront-web",
+      "role": "frontend",
+      "docs": "storefront-web/docs/index.md",
+      "knowledge_layer": "storefront-web/docs/.ai/index.json",
+      "source_commit": "1a2b3c4",
+      "features": 18
+    },
+    {
+      "repository_id": "checkout-api",
+      "path": "checkout-api",
+      "role": "backend",
+      "docs": "checkout-api/docs/index.md",
+      "knowledge_layer": "checkout-api/docs/.ai/index.json",
+      "source_commit": "9243abc",
+      "features": 42
+    }
+  ],
+  "health": {
+    "repositories_indexed": 2,
+    "boundaries": 7,
+    "dangling_boundaries": 1
+  }
+}
+```
+
+`path` é relativo à raiz do sistema. `source_commit` registra em que commit de cada repositório a agregação foi feita — é o que permite detectar que a camada de sistema ficou atrás de um repositório sem reler todos.
+
+### 8.5 Regra de não-duplicação
+
+A separação entre os dois escopos é normativa:
+
+| Pergunta | Responde | Escopo |
+|---|---|---|
+| Como esta feature funciona? | documento da feature | repositório |
+| Que regra de negócio se aplica aqui? | doc + `traceability.json` | repositório |
+| Quem chama este método? | `code-graph.json` | repositório |
+| Quais repositórios existem e o que cada um faz? | `system.json` + `docs/index.md` | sistema |
+| Como os repositórios se falam? | `integration-graph.json` agregado | sistema |
+| Onde começa e termina um fluxo ponta a ponta? | `business-flows.json` do sistema | sistema |
+
+* A raiz **nunca** copia descrição, regra, entrada, saída ou fluxo interno de uma feature — aponta para o documento dono, qualificado por `repository_id`
+* O documento de um repositório **nunca** descreve a estrutura interna de outro repositório — referencia a travessia e o ID qualificado (`payment-api#payment.authorize`)
+* Informação duplicada entre escopos é drift esperando para acontecer: haverá duas versões e nenhuma autoridade
+
+### 8.6 Agregação e ordem de geração
+
+A camada de sistema é **derivada** das camadas de repositório. Portanto:
+
+```
+1. gerar/atualizar cada repositório (fonte de verdade)
+        ↓
+2. ler os index.json e integration-graph.json de cada um
+        ↓
+3. casar as travessias por chave de contrato (§8.2)
+        ↓
+4. agregar em integration-graph.json do sistema
+        ↓
+5. escrever system.json com os source_commit apurados
+```
+
+Regras de agregação:
+
+* Travessia com produtor em um repositório e consumidor em outro é registrada **uma única vez** no escopo sistema, com as duas pontas resolvidas
+* Travessia com apenas uma ponta conhecida permanece `dangling`, com a ponta ausente explícita — a raiz não adivinha o destino
+* Repositório do sistema que não está presente na pasta ou não é indexável entra em `system.json` com `"indexed": false` e razão declarada; não é omitido silenciosamente
+* A camada de sistema nunca é gerada antes dos repositórios; se um `source_commit` de repositório mudou, a agregação está desatualizada e deve ser refeita — regenerar a raiz é barato, pois ela não contém detalhe
+
 ---
 
 ## 9. Business Flow Graph
@@ -857,7 +966,7 @@ A especificação é agnóstica de framework. Nenhuma regra assume NestJS, Angul
 | Cenário | Como a especificação se aplica |
 |---|---|
 | **Monorepo** | um `repository_id` por pacote/app; `system_id` comum; `/docs/.ai` na raiz ou por pacote, declarado em `index.json` |
-| **Multi-repo** | um `/docs/.ai` por repositório; correlação por `system_id` + chave de contrato (§8.2) |
+| **Multi-repo** | um `/docs/.ai` por repositório; quando os repositórios compartilham uma pasta raiz, essa raiz recebe a camada de sistema (§8.4): `system.json` + Integration Graph agregado, fina e roteadora |
 | **Microservices** | Integration Graph é o artefato central; Code Graph fica escopado por serviço |
 | **Modular monolith** | Code Graph interno rico; Integration Graph pequeno, limitado a integrações externas |
 | **Frontend + backend** | boundary HTTP/GraphQL correlaciona ação de UI a endpoint; nodes `ui-page`/`ui-component`/`user-action` |
@@ -885,3 +994,6 @@ A especificação é agnóstica de framework. Nenhuma regra assume NestJS, Angul
 * Prometer precisão total do Code Graph
 * Frontmatter gigante que duplica o corpo do documento
 * Marcar `last_verified_commit` sem ter efetivamente verificado a correspondência
+* Duplicar na raiz do sistema o conteúdo que pertence à documentação de um repositório
+* Gerar a camada de sistema antes das camadas de repositório das quais ela deriva
+* Descrever, no documento de um repositório, a estrutura interna de outro repositório

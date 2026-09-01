@@ -66,9 +66,23 @@ Especificação normativa completa — schemas, vocabulários, IDs, confiança, 
 
 ---
 
+### Escopo sistema (raiz multi-repositório)
+
+Quando os repositórios de um sistema vivem lado a lado sob uma pasta comum, essa raiz recebe uma camada **fina e roteadora** — `system.json` + Integration Graph agregado —, gerada **depois** das camadas de repositório das quais deriva.
+
+```
+<system_id>/docs/            ← mapa dos repos + travessias + fluxos ponta a ponta
+<system_id>/<repo>/docs/     ← camada completa: módulos, features, Code Graph
+```
+
+A raiz nunca duplica conteúdo de feature: aponta para o documento dono, qualificado por `repository_id`. Contrato completo em [knowledge-layer.md](../knowledge-layer.md) §8.4–8.6.
+
+---
+
 ## 🚀 Responsabilidades
 
 * Manter `/docs/index.md` como ponto de entrada humano, listando módulos com links navegáveis
+* Em sistemas multi-repositório: manter a camada de sistema na raiz (registro de repositórios, Integration Graph agregado, fluxos ponta a ponta), sempre derivada das camadas de repositório e nunca duplicando o conteúdo delas
 * Manter `/docs/modules/<module>/index.md` e `/docs/modules/<module>/<feature>.md` conforme o template obrigatório
 * Atribuir e preservar **IDs estáveis** independentes do nome físico do arquivo
 * Gerar e manter os artefatos machine-readable de `/docs/.ai/` conforme obrigatoriedade proporcional ao projeto
@@ -195,6 +209,8 @@ last_verified_commit: <sha>
 * **NUNCA** indexar secrets, tokens, senhas, connection strings, conteúdo de `.env`, credenciais de cloud ou dados pessoais reais — registrar apenas a existência conceitual da dependência
 * **NUNCA** editar manualmente artefatos de `/docs/.ai/` — são derivados e regeneráveis
 * **NUNCA** regenerar a knowledge layer inteira por causa de mudança localizada, exceto em `bootstrap`, corrupção detectada ou mudança de `schema_version`
+* **NUNCA** duplicar na raiz do sistema o conteúdo que pertence à documentação de um repositório — a raiz roteia, o repositório detalha
+* **NUNCA** gerar a camada de sistema antes das camadas de repositório das quais ela deriva
 * **NUNCA** prometer precisão total do Code Graph — usar "alta precisão estrutural" e "deterministicamente verificável"
 
 ---
