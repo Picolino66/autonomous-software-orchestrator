@@ -11,7 +11,7 @@
 ```
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
-![Sub-skills](https://img.shields.io/badge/sub--skills-54-purple?style=flat-square)
+![Sub-skills](https://img.shields.io/badge/sub--skills-55-purple?style=flat-square)
 ![Phases](https://img.shields.io/badge/phases-7-orange?style=flat-square)
 ![Quality Gates](https://img.shields.io/badge/quality%20gates-7-green?style=flat-square)
 ![Language](https://img.shields.io/badge/language-pt--BR-yellow?style=flat-square)
@@ -166,7 +166,7 @@ orchestration-engine               (quando filas/eventos/workers)
 </details>
 
 <details>
-<summary><strong>F6 — Quality, Docs & Deploy</strong> &nbsp;·&nbsp; 8 sub-skills</summary>
+<summary><strong>F6 — Quality, Docs & Deploy</strong> &nbsp;·&nbsp; 9 sub-skills</summary>
 
 > Garante que o sistema está seguro, documentado, testado em profundidade e pronto para produção.
 
@@ -175,14 +175,14 @@ automated-testing-engine  ◄──►  security-testing-engine
         ↓
 quality-assurance-engine
         ↓
-documentation-engine  ◄──►  operational-documentation-engine  ◄──►  ai-docs-self-healing-engine
+manual-qa-notion-export-engine  ◄──►  documentation-engine  ◄──►  operational-documentation-engine  ◄──►  ai-docs-self-healing-engine
         ↓
 deployment-engine
         ↓
 post-deployment-validation-engine
 ```
 
-**Saídas:** suíte completa de testes (unit, integration, contract, e2e), relatório SAST/DAST/SCA, documentação técnica e arquitetural, runbooks, sistema deployado com rollback validado
+**Saídas:** suíte completa de testes (unit, integration, contract, e2e), relatório SAST/DAST/SCA, campanha manual com CSV enxuto e roteiro no corpo dos cards do Notion quando aplicável, documentação técnica e arquitetural, runbooks, sistema deployado com rollback validado
 
 **Quality gate:** security scan sem críticos + testes e2e aprovados + docs completa + rollback testado + smoke tests passando
 
@@ -358,8 +358,10 @@ autonomous-software-orchestrator/
 ├── SKILL.md                           # Protocolo de orquestração e regras obrigatórias
 ├── pipeline.md                        # 7 fases com quality gates detalhados
 ├── context-management.md              # OrchestratorContext, snapshots, ADRs e rollback
+├── scripts/
+│   └── export-manual-qa-notion.mjs    # Gera propriedades e conteúdo dos cards do Notion
 │
-└── sub-skills/                        # 54 sub-skills individuais
+└── sub-skills/                        # 55 sub-skills individuais
     │
     ├── market-context-analysis.md
     ├── business-model-definition.md

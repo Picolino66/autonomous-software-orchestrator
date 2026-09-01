@@ -226,7 +226,7 @@ automated-testing-engine ←→ security-testing-engine (paralelas)
     ↓
 quality-assurance-engine
     ↓
-documentation-engine ←→ operational-documentation-engine ←→ ai-docs-self-healing-engine (paralelas)
+manual-qa-notion-export-engine ←→ documentation-engine ←→ operational-documentation-engine ←→ ai-docs-self-healing-engine (paralelas)
     ↓
 deployment-engine
     ↓
@@ -239,6 +239,7 @@ post-deployment-validation-engine
 **Saídas produzidas:**
 - Suíte de testes completa (unit, integration, contract, e2e)
 - Relatório de segurança (SAST, DAST, SCA)
+- Campanha de QA manual por dia, CSV enxuto e conteúdo do corpo dos cards para Notion, quando aplicável
 - Documentação técnica e arquitetural
 - Runbooks e procedimentos operacionais
 - Sistema deployado e validado em ambiente de produção
@@ -246,6 +247,8 @@ post-deployment-validation-engine
 **Quality gate F6 → F7:**
 - [ ] Security scan sem vulnerabilidades críticas ou altas sem mitigação
 - [ ] Testes e2e nos fluxos críticos aprovados
+- [ ] Quando solicitada, campanha manual cobre as telas e fluxos visíveis, possui IDs únicos, CSV enxuto e conteúdo dos cards validados
+- [ ] Geração da campanha não foi registrada indevidamente como execução dos testes
 - [ ] Documentação técnica completa e acessível
 - [ ] `/docs/index.md` criado e índices de módulos sem links quebrados
 - [ ] Runbooks de operação e incidente criados

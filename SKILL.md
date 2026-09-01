@@ -15,7 +15,7 @@ Toda decisão arquitetural tomada é registrada como ADR (Architecture Decision 
 
 Referências:
 - [pipeline.md](./pipeline.md) — fases de execução completas com quality gates
-- [sub-skills/](./sub-skills/) — 54 sub-skills individuais no formato de skill completo
+- [sub-skills/](./sub-skills/) — 55 sub-skills individuais no formato de skill completo
 - [context-management.md](./context-management.md) — protocolo de contexto, snapshots e sincronização
 
 ---
@@ -113,7 +113,7 @@ Ver protocolo completo em [sub-skills/external-skill-resolver.md](./sub-skills/e
 
 ## 🧩 Sub-skills Especialistas
 
-O orquestrador coordena 54 sub-skills organizadas em 7 fases + 1 transversal. Cada sub-skill está documentada individualmente em [sub-skills/](./sub-skills/).
+O orquestrador coordena 55 sub-skills organizadas em 7 fases + 1 transversal. Cada sub-skill está documentada individualmente em [sub-skills/](./sub-skills/).
 
 ### Mapa rápido por fase
 
@@ -124,7 +124,7 @@ O orquestrador coordena 54 sub-skills organizadas em 7 fases + 1 transversal. Ca
 | F3 — Data & API Contracts | `data-modeling-engine`, `api-contract-engine`, `data-consistency-engine` |
 | F4 — UX/UI & Planning | `ux-ui-design-engine`, `usability-testing-engine`, `technical-planning-engine`, `agentic-project-structure-engine`, `backlog-generation-engine`, `prioritization-engine` |
 | F5 — Engineering Execution | `project-setup-engine`, `code-governance-engine`, `architectural-patterns-engine`, `cicd-pipeline-engine`, `quality-gates-engine`, `backend-development-engine`, `frontend-development-engine`, `mobile-development-engine`, `distributed-architecture-engine`, `orchestration-engine` |
-| F6 — Quality, Docs & Deploy | `automated-testing-engine`, `quality-assurance-engine`, `security-testing-engine`, `documentation-engine`, `operational-documentation-engine`, `ai-docs-self-healing-engine`, `deployment-engine`, `post-deployment-validation-engine` |
+| F6 — Quality, Docs & Deploy | `automated-testing-engine`, `quality-assurance-engine`, `security-testing-engine`, `manual-qa-notion-export-engine`, `documentation-engine`, `operational-documentation-engine`, `ai-docs-self-healing-engine`, `deployment-engine`, `post-deployment-validation-engine` |
 | F7 — Operate & Evolve | `observability-engine`, `incident-management-engine`, `maintenance-engine`, `continuous-evolution-engine`, `user-feedback-engine`, `performance-and-scale-engine`, `infrastructure-cost-optimization-engine`, `architectural-reassessment-engine`, `product-strategy-engine` |
 | **Transversal (F2–F7)** | **`external-skill-resolver`** — avalia e delega para skills externas antes de cada sub-skill a partir de F2 |
 
@@ -260,6 +260,19 @@ Ver protocolo completo em [context-management.md](./context-management.md).
 * **SEMPRE** validar que outputs de sub-skills são consistentes com decisões já registradas no contexto antes de aceitar o merge
 * **SEMPRE** manter rastreabilidade bidirecional: requisito → decisão arquitetural → implementação → teste → deploy
 * **SEMPRE** acionar `architectural-reassessment-engine` quando qualquer KPI de F7 atingir threshold crítico
+
+### Padrão global de campanhas manuais de QA no Notion
+
+Quando F6 produzir uma campanha de QA manual no Notion, aplicar este padrão em qualquer projeto, salvo instrução explícita do usuário em contrário:
+
+* Criar um banco de QA com somente quatro propriedades de controle: `Tarefa` (título), `Status` (seleção), `Sprint` (seleção) e `Prioridade` (seleção).
+* Usar os status `Não iniciado`, `A fazer`, `Fazendo`, `Finalizado` e `Reprovado`, agrupados em um quadro Kanban por `Status`.
+* Não criar propriedades para contexto do roteiro, resultado, evidência, dependência, impacto, perfil, módulo, feature, passos ou dados de teste. Essas informações pertencem ao corpo longo do card.
+* Dar a cada card um título ordenável no formato `Dxx.yy — ação curta`, com dia e sequência sempre preenchidos com dois dígitos. Exemplo: `D01.01 — Validar acesso`.
+* Configurar o quadro sem filtros e com ordenação crescente por `Tarefa`, garantindo que `D01.01` fique acima de `D01.02` e assim sucessivamente dentro de qualquer coluna de status.
+* Exibir no card do quadro apenas `Tarefa`, `Sprint` e `Prioridade`; o roteiro completo deve ficar no corpo da página, abaixo das propriedades.
+* Manter todos os cards planejados em `Não iniciado`; a execução humana é a única autorizada a mudar o status ou preencher o registro de execução.
+* Ao finalizar a criação, validar: esquema mínimo, agrupamento por status, ausência de filtros, ordenação ascendente por `Tarefa`, títulos sem duplicidade e presença do roteiro no corpo de todos os cards.
 
 ---
 

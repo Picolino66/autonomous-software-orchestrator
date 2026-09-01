@@ -138,7 +138,9 @@ Define o `OrchestratorContext`, protocolo de snapshots, estratégias de compress
     "test_results": null,
     "coverage_report": null,
     "security_report": null,
-    "qa_report": null
+    "qa_report": null,
+    "manual_qa_campaign": null,
+    "manual_qa_notion_export": null
   },
 
   "operations": {
